@@ -25,9 +25,9 @@ class RemesitaPaymentAutorizationFlowClient
      * 
      * @param string $apiToken Token de autenticación de la API
      * @param string $businessUnitId ID del negocio
-     * @param string $baseUrl URL base de la API (por defecto: https://remesita.com)
+     * @param string $baseUrl URL base de la API (por defecto: https://api.remesita.com)
      */
-    public function __construct(string $apiToken, string $businessUnitId, string $baseUrl = 'https://remesita.com')
+    public function __construct(string $apiToken, string $businessUnitId, string $baseUrl = 'https://api.remesita.com')
     {
         $this->client = HttpClient::create();
         $this->apiToken = $apiToken;
