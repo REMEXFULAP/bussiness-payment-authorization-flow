@@ -72,10 +72,10 @@ composer install
 
 require_once __DIR__ . '/vendor/autoload.php';
 
-use Remesita\SDK\RemesitaClient;
+use Remesita\SDK\RemesitaPaymentAutorizationFlowClient;
 
 // Inicializar el cliente
-$remesita = new RemesitaClient(
+$remesita = new RemesitaPaymentAutorizationFlowClient(
     apiToken: 'tu_api_token_aqui',
     businessUnitId: 'tu_business_id_aqui'
 );
@@ -95,9 +95,9 @@ REMESITA_WEBHOOK_URL=https://tuapp.com/webhook/remesita
 ```php
 <?php
 
-use Remesita\SDK\RemesitaClient;
+use Remesita\SDK\RemesitaPaymentAutorizationFlowClient;
 
-$remesita = new RemesitaClient(
+$remesita = new RemesitaPaymentAutorizationFlowClient(
     apiToken: $_ENV['REMESITA_API_TOKEN'],
     businessUnitId: $_ENV['REMESITA_BUSINESS_ID']
 );
@@ -197,10 +197,10 @@ $result = $remesita->initiatePayment([
 ```php
 <?php
 
-use Remesita\SDK\RemesitaClient;
+use Remesita\SDK\RemesitaPaymentAutorizationFlowClient;
 use Remesita\SDK\RemesitaException;
 
-$remesita = new RemesitaClient(
+$remesita = new RemesitaPaymentAutorizationFlowClient(
     $_ENV['REMESITA_API_TOKEN'],
     $_ENV['REMESITA_BUSINESS_ID']
 );
