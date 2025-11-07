@@ -1,82 +1,307 @@
-# Caso de Uso 1: Pago Simple a Wallet del Comercio
+# Remesita Payment Authorization - PHP SDK
 
-## 📋 Descripción
+[![Latest Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/remesita/php-sdk)
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D8.0-8892BF.svg)](https://www.php.net/)
+[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
-Este es el flujo más básico donde un comercio cobra un monto y los fondos caen directamente en la wallet asociada al business. Es ideal para:
+SDK oficial de PHP para integrar la API de pagos de Remesita en tu aplicación.
 
-- Ventas de productos/servicios
-- Pagos únicos
-- Transacciones simples sin intermediarios
+## 📋 Tabla de Contenidos
 
-## 🔄 Diagrama de Flujo
+- [Características](#-características)
+- [Requisitos](#-requisitos)
+- [Instalación](#-instalación)
+- [Configuración Rápida](#-configuración-rápida)
+- [Flujos de Integración](#-flujos-de-integración)
+- [Ejemplos de Uso](#-ejemplos-de-uso)
+- [Documentación Completa](#-documentación-completa)
+- [Webhooks](#-webhooks)
+- [Testing](#-testing)
+- [Soporte](#-soporte)
+- [Licencia](#-licencia)
 
-```mermaid
-sequenceDiagram
-    participant Cliente
-    participant Merchant
-    participant API Remesita
-    participant Usuario Remesita
-    
-    Note over Merchant,API Remesita: PRIMERA VEZ (Sin token guardado)
-    
-    Merchant->>API Remesita: POST /payment/initiate
-    Note right of Merchant: amount: 100<br/>concept: "Compra #123"<br/>account: wallet/phone<br/>SIN token
-    
-    API Remesita-->>Merchant: 203 two-factor-choice
-    Note right of API Remesita: options: [SMS, Email, etc]<br/>paymentSession: "sess-123"
-    
-    Merchant->>Cliente: Mostrar opciones 2FA
-    Cliente->>Merchant: Selecciona canal (SMS)
-    
-    Merchant->>API Remesita: POST /authorization/request
-    Note right of Merchant: paymentSession: "sess-123"<br/>channel: "smsKey"
-    
-    API Remesita->>Usuario Remesita: Envía código SMS
-    API Remesita-->>Merchant: 200 two-factor-sent
-    Note right of API Remesita: paymentAuthorizationToken
-    
-    Usuario Remesita->>Cliente: Proporciona código
-    Cliente->>Merchant: Ingresa código 123456
-    
-    Merchant->>API Remesita: POST /authorization/validate
-    Note right of Merchant: code: 123456<br/>paymentAuthorizationToken
-    
-    API Remesita->>API Remesita: Procesa pago
-    API Remesita-->>Merchant: 200 approved
-    Note right of API Remesita: order: "RM12345"<br/>TOKEN VÁLIDO
-    
-    Merchant->>Merchant: Guarda token para futuro
-    
-    Note over Merchant,API Remesita: PAGOS SIGUIENTES (Con token guardado)
-    
-    Merchant->>API Remesita: POST /payment/initiate
-    Note right of Merchant: amount: 50<br/>CON token guardado
-    
-    API Remesita->>API Remesita: Valida token y procesa
-    API Remesita-->>Merchant: 200 approved
-    Note right of API Remesita: Pago instantáneo
-    
-    API Remesita->>Merchant: Webhook IPN
-    Note right of API Remesita: Notifica estado final
+## ✨ Características
+
+- ✅ **Pagos Simples**: Cobra a wallets Remesita de forma segura
+- ✅ **Distribución Automática**: Reparte fondos entre múltiples wallets sin costo adicional
+- ✅ **Suscripciones**: Crea pagos recurrentes automáticos
+- ✅ **Autenticación 2FA**: Manejo completo del flujo de autorización
+- ✅ **Tokens Persistentes**: Almacena autorizaciones para pagos futuros instantáneos
+- ✅ **Payment Links**: Genera enlaces de pago personalizados
+- ✅ **Reembolsos**: Procesa devoluciones parciales o totales
+- ✅ **Validación Automática**: Valida datos antes de enviar a la API
+- ✅ **Manejo de Errores**: Excepciones claras y detalladas
+
+## 🔧 Requisitos
+
+- PHP >= 8.0
+- Composer
+- Extensión `ext-json`
+- Symfony HttpClient Component >= 6.0
+
+## 📦 Instalación
+
+### Vía Composer
+
+```bash
+composer require remesita/php-sdk
 ```
 
-## 💻 Ejemplo de Integración - PHP SDK
+### Instalación Manual
 
-### Servicio de Pago
+```bash
+git clone https://github.com/remesita/php-sdk.git
+cd php-sdk
+composer install
+```
+
+## 🚀 Configuración Rápida
+
+### 1. Obtén tus Credenciales
+
+1. Regístrate en [Remesita.com](https://remesita.com)
+2. Accede al [Dashboard de desarrolladores](https://remesita.com/developers)
+3. Crea una aplicación y obtén:
+   - `API Token`
+   - `Business Unit ID`
+
+### 2. Configuración Básica
 
 ```php
 <?php
 
-  
+require_once __DIR__ . '/vendor/autoload.php';
+
+use Remesita\SDK\RemesitaClient;
+
+// Inicializar el cliente
+$remesita = new RemesitaClient(
+    apiToken: 'tu_api_token_aqui',
+    businessUnitId: 'tu_business_id_aqui'
+);
+
+// ¡Listo para usar!
 ```
- 
 
-## 🔑 Puntos Clave
+### 3. Variables de Entorno (Recomendado)
 
-1. **Guardar el Token**: Una vez validado, guarda el `paymentAuthorizationToken` asociado al cliente
-2. **Reutilizar Token**: En pagos futuros, envía el token guardado para procesamiento instantáneo
-3. **Manejo de Errores**: Implementa reintentos y manejo adecuado de errores de red
-4. **Webhooks**: Siempre implementa el endpoint IPN para confirmación definitiva del pago
-5. **Seguridad**: Valida las firmas de los webhooks según documentación de Remesita
-6. **Expiración**: Los tokens tienen validez temporal, maneja la renovación cuando expiren
-7. **Límites**: Ten en cuenta los límites por nivel de cliente (diarios/mensuales)
+```bash
+# .env
+REMESITA_API_TOKEN=your_api_token_here
+REMESITA_BUSINESS_ID=your_business_id_here
+REMESITA_WEBHOOK_URL=https://tuapp.com/webhook/remesita
+```
+
+```php
+<?php
+
+use Remesita\SDK\RemesitaClient;
+
+$remesita = new RemesitaClient(
+    apiToken: $_ENV['REMESITA_API_TOKEN'],
+    businessUnitId: $_ENV['REMESITA_BUSINESS_ID']
+);
+```
+
+## 🔄 Flujos de Integración
+
+El SDK de Remesita soporta 3 flujos principales de integración:
+
+### 1️⃣ [Pago Simple](docs/CASO-1-PAGO-SIMPLE.md)
+
+Cobra a un cliente y recibe los fondos directamente en tu wallet.
+
+**Ideal para:**
+- E-commerce
+- Servicios profesionales
+- Ventas de productos digitales
+
+```php
+$result = $remesita->initiatePayment([
+    'amount' => 100.00,
+    'account' => '+1234567890',
+    'concept' => 'Compra en MiTienda',
+    'customId' => 'ORDER-123',
+    'ipnUrl' => 'https://mitienda.com/webhook'
+]);
+```
+
+📖 **[Ver documentación completa →](docs/CASO-1-PAGO-SIMPLE.md)**
+
+---
+
+### 2️⃣ [Pago con Distribución](docs/CASO-2-DISTRIBUCION.md)
+
+Cobra un monto y distribuye automáticamente entre múltiples wallets.
+
+**Ideal para:**
+- Marketplaces
+- Plataformas multi-vendor
+- Sistemas de afiliados
+- Reparto entre socios
+
+```php
+$result = $remesita->initiatePayment([
+    'amount' => 100.00,
+    'account' => '+1234567890',
+    'concept' => 'Compra en Marketplace',
+    'distribution' => [
+        [
+            'account' => 'wallet-vendedor',
+            'fixed_amount' => 70.00
+        ],
+        [
+            'account' => 'wallet-afiliado',
+            'percentage_amount' => 10
+        ]
+        // Tu wallet recibe automáticamente el resto: $20
+    ]
+]);
+```
+
+📖 **[Ver documentación completa →](docs/CASO-2-DISTRIBUCION.md)**
+
+---
+
+### 3️⃣ [Suscripciones](docs/CASO-3-SUSCRIPCIONES.md)
+
+Crea pagos recurrentes automáticos con distribución opcional.
+
+**Ideal para:**
+- SaaS
+- Membresías
+- Servicios por suscripción
+- Cursos online
+
+```php
+$result = $remesita->initiatePayment([
+    'amount' => 9.99,
+    'account' => '+1234567890',
+    'concept' => 'Suscripción Premium',
+    'subscription' => [
+        'amount' => 9.99,
+        'frequency' => '@monthly',
+        'times' => -1 // Infinito
+    ]
+]);
+```
+
+📖 **[Ver documentación completa →](docs/CASO-3-SUSCRIPCIONES.md)**
+
+---
+
+## 💡 Ejemplos de Uso
+
+### Ejemplo Completo: Primera Compra con 2FA
+
+```php
+<?php
+
+use Remesita\SDK\RemesitaClient;
+use Remesita\SDK\RemesitaException;
+
+$remesita = new RemesitaClient(
+    $_ENV['REMESITA_API_TOKEN'],
+    $_ENV['REMESITA_BUSINESS_ID']
+);
+
+try {
+    // Paso 1: Iniciar pago
+    $result = $remesita->initiatePayment([
+        'amount' => 50.00,
+        'account' => '+1234567890',
+        'concept' => 'Producto XYZ',
+        'customId' => 'ORDER-789',
+        'ipnUrl' => 'https://mitienda.com/webhook'
+    ]);
+
+    // Paso 2: Si requiere autenticación
+    if ($result['status'] === 'two-factor-choice') {
+        // Mostrar opciones al usuario (SMS, Email, etc)
+        $authOptions = $result['options'];
+        $paymentSession = $result['paymentSession'];
+        
+        // Usuario selecciona canal (ej: SMS)
+        $selectedChannel = $authOptions[0]['value'];
+        
+        // Solicitar código
+        $codeResult = $remesita->requestAuthCode(
+            $paymentSession,
+            $selectedChannel
+        );
+        
+        $authToken = $codeResult['paymentAuthorizationToken'];
+        
+        // Usuario ingresa código recibido
+        $code = '123456';
+        
+        // Validar código
+        $validation = $remesita->validateAuthCode(
+            $paymentSession,
+            $authToken,
+            $code
+        );
+        
+        if ($validation['status'] === 'approved') {
+            // ✅ Pago exitoso
+            $orderReference = $validation['order'];
+            $token = $validation['paymentAuthorizationToken'];
+            
+            // Guardar token para futuros pagos
+            saveCustomerToken($customerAccount, $token);
+            
+            echo "Pago procesado: {$orderReference}";
+        }
+    }
+    
+    // Paso 3: Si tenía token guardado, pago instantáneo
+    if ($result['status'] === 'approved') {
+        echo "Pago procesado instantáneamente: {$result['order']}";
+    }
+    
+} catch (RemesitaException $e) {
+    echo "Error: " . $e->getMessage();
+}
+```
+
+### Ejemplo: Marketplace con Comisiones
+
+```php
+<?php
+
+// Venta de $150 en un marketplace
+$orderTotal = 150.00;
+
+// Distribución:
+// - Vendedor: $120 (80%)
+// - Afiliado: $15 (10%)
+// - Plataforma: $15 (resto)
+
+$distribution = [
+    [
+        'account' => $vendor->getWalletAddress(),
+        'fixed_amount' => 120.00
+    ],
+    [
+        'account' => $affiliate->getWalletAddress(),
+        'percentage_amount' => 10
+    ]
+];
+
+// Calcular cuánto recibe la plataforma
+$platformAmount = $remesita->calculateMerchantAmount($orderTotal, $distribution);
+echo "La plataforma recibirá: \$" . $platformAmount; // $15.00
+
+try {
+    $result = $remesita->initiatePayment([
+        'amount' => $orderTotal,
+        'account' => $customer->getAccount(),
+        'concept' => "Orden #{$order->getId()}",
+        'distribution' => $distribution,
+        'savedToken' => $customer->getRemesitaToken(),
+        'customId' => $order->getId()
+    ]);
+    
+    if ($result['status'] === 'approved') {
+        // Actualizar orden
+        $order->markAsPaid($result['order']);
